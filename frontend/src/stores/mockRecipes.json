@@ -1,0 +1,169 @@
+[
+  {
+    "id": "1",
+    "title": "Spaghetti Aglio e Olio",
+    "image": "/src/images/Spaghetti Aglio e Olio.jpg",
+    "ingredients": ["spaghetti", "garlic", "olive oil", "chili flakes", "parsley", "salt"],
+    "instructions": [
+      "Boil pasta in salted water until al dente.",
+      "Sauté sliced garlic in olive oil until fragrant.",
+      "Add chili flakes, then toss in drained pasta.",
+      "Finish with chopped parsley and adjust salt."
+    ],
+    "timeToPrepare": 15,
+    "tags": ["pasta", "quick", "vegetarian"],
+    "caloriesPerServing": 420,
+    "servingSize": 2,
+    "favorite": true
+  },
+  {
+    "id": "2",
+    "title": "Avocado Toast",
+    "image": "/src/images/Avocado Toast.jpg",
+    "ingredients": ["bread", "avocado", "lemon", "salt", "pepper"],
+    "instructions": [
+      "Toast bread slices.",
+      "Mash avocado with lemon, salt, and pepper.",
+      "Spread on toast and serve."
+    ],
+    "timeToPrepare": 5,
+    "tags": ["breakfast", "quick", "vegan"],
+    "caloriesPerServing": 300,
+    "servingSize": 1,
+    "favorite": false
+  },
+  {
+    "id": "3",
+    "title": "Rainbow Veggie Bowl",
+    "image": "/src/images/Rainbow Veggie Bowl.jpg",
+    "ingredients": ["quinoa", "spinach", "carrot", "beet", "chickpeas", "avocado"],
+    "instructions": [
+      "Cook quinoa as per instructions.",
+      "Roast or steam veggies.",
+      "Arrange all ingredients in a bowl.",
+      "Top with avocado and chickpeas.",
+      "Drizzle with dressing and serve."
+    ],
+    "timeToPrepare": 30,
+    "tags": ["vegan", "gluten-free", "healthy", "colorful", "bowl"],
+    "caloriesPerServing": 400,
+    "servingSize": 2,
+    "favorite": false
+  },
+  {
+    "id": "4",
+    "title": "Classic French Toast",
+    "image": "/src/images/Classic French Toast.jpg",
+    "ingredients": ["bread", "egg", "milk", "cinnamon", "syrup"],
+    "instructions": [
+      "Whisk egg, milk, and cinnamon.",
+      "Dip bread slices in mixture.",
+      "Cook on skillet until golden.",
+      "Serve with syrup."
+    ],
+    "timeToPrepare": 10,
+    "tags": ["breakfast"],
+    "caloriesPerServing": 320,
+    "servingSize": 2,
+    "favorite": false
+  },
+  {
+    "id": "5",
+    "title": "Chicken Caesar Salad",
+    "image": "/src/images/Chicken Caesar Salad.jpg",
+    "ingredients": ["romaine lettuce", "chicken breast", "croutons", "parmesan", "caesar dressing"],
+    "instructions": [
+      "Grill or pan-fry chicken breast and slice.",
+      "Toss lettuce with dressing.",
+      "Top with chicken, croutons, and parmesan."
+    ],
+    "timeToPrepare": 20,
+    "tags": ["salad", "chicken", "classic"],
+    "caloriesPerServing": 350,
+    "servingSize": 2,
+    "favorite": false
+  },
+  {
+    "id": "6",
+    "title": "Vegetable Stir Fry",
+    "image": "/src/images/Vegetable Stir Fry.jpg",
+    "ingredients": ["broccoli", "carrot", "bell pepper", "soy sauce", "ginger", "garlic", "rice"],
+    "instructions": [
+      "Chop all vegetables.",
+      "Stir fry garlic and ginger in oil.",
+      "Add vegetables and cook until tender.",
+      "Add soy sauce and serve with rice."
+    ],
+    "timeToPrepare": 25,
+    "tags": ["vegetarian", "asian", "healthy"],
+    "caloriesPerServing": 280,
+    "servingSize": 2,
+    "favorite": true
+  },
+  {
+    "id": "7",
+    "title": "Chocolate Mug Cake",
+    "image": "/src/images/Chocolate Mug Cake.jpg",
+    "ingredients": ["flour", "cocoa powder", "sugar", "milk", "oil", "baking powder"],
+    "instructions": [
+      "Mix all ingredients in a mug.",
+      "Microwave for 1-2 minutes until set.",
+      "Let cool slightly and enjoy."
+    ],
+    "timeToPrepare": 3,
+    "tags": ["dessert", "quick", "chocolate"],
+    "caloriesPerServing": 350,
+    "servingSize": 1,
+    "favorite": false
+  },
+  {
+    "id": "8",
+    "title": "Lemon Garlic Salmon",
+    "image": "/src/images/Lemon Garlic Salmon.jpg",
+    "ingredients": ["salmon fillet", "lemon", "garlic", "olive oil", "dill", "salt", "pepper"],
+    "instructions": [
+      "Preheat oven to 200°C.",
+      "Mix lemon juice, garlic, olive oil, dill, salt, and pepper.",
+      "Place salmon on baking tray and pour mixture over.",
+      "Bake for 15-20 minutes until cooked through."
+    ],
+    "timeToPrepare": 25,
+    "tags": ["seafood", "healthy", "dinner"],
+    "caloriesPerServing": 350,
+    "servingSize": 2,
+    "favorite": false
+  },
+  {
+    "id": "9",
+    "title": "Caprese Salad",
+    "image": "/src/images/Caprese Salad.jpg",
+    "ingredients": ["tomato", "mozzarella", "basil", "olive oil", "balsamic glaze", "salt", "pepper"],
+    "instructions": [
+      "Slice tomatoes and mozzarella.",
+      "Arrange on plate with basil leaves.",
+      "Drizzle with olive oil and balsamic glaze.",
+      "Season with salt and pepper."
+    ],
+    "timeToPrepare": 10,
+    "tags": ["salad", "vegetarian", "quick"],
+    "caloriesPerServing": 250,
+    "servingSize": 2,
+    "favorite": true
+  },
+  {
+    "id": "10",
+    "title": "Peanut Butter Banana Smoothie",
+    "image": "/src/images/Peanut Butter Banana Smoothie.jpg",
+    "ingredients": ["banana", "peanut butter", "milk", "honey", "ice"],
+    "instructions": [
+      "Combine all ingredients in blender.",
+      "Blend until smooth.",
+      "Pour into glass and serve."
+    ],
+    "timeToPrepare": 5,
+    "tags": ["drink", "breakfast", "quick", "dessert", "sweet", "smoothie"],
+    "caloriesPerServing": 300,
+    "servingSize": 1,
+    "favorite": false
+  }
+]

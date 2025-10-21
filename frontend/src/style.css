@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+body {
+  background-image: url('/src/public/italian-food-ingredients.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+.font-story-script {
+  font-family: 'Story Script', cursive;
+}
