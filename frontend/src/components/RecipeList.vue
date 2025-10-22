@@ -1,41 +1,52 @@
-<script setup>
-import { useRecipesStore } from "../stores/recipes";
+<script setup lang="ts">
+import { useRecipesStore } from "@/stores/recipes";
 import { storeToRefs } from "pinia";
-import { RouterLink } from "vue-router";
 import { computed, ref } from "vue";
+import type { Recipe } from "@/types";
 
 const store = useRecipesStore();
 const { filteredRecipes, searchTerm } = storeToRefs(store);
 
-const props = defineProps({
-  filter: { type: String, default: "all" },
+interface Props {
+  filter?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  filter: "all",
 });
 
-const displayedRecipes = computed(() => {
+const displayedRecipes = computed((): Recipe[] => {
   if (props.filter === "favorite")
-    return filteredRecipes.value.filter((r) => r.favorite);
+    return filteredRecipes.value.filter((r: Recipe) => r.favorite);
   if (props.filter === "non-favorite")
-    return filteredRecipes.value.filter((r) => !r.favorite);
+    return filteredRecipes.value.filter((r: Recipe) => !r.favorite);
   return filteredRecipes.value;
 });
 
-function handleTagClick(tag) {
+function handleTagClick(tag: string): void {
   const terms = searchTerm.value.split(/\s+/).filter(Boolean);
-  const i = terms.findIndex((t) => t.toLowerCase() === tag.toLowerCase());
+  const i = terms.findIndex(
+    (t: string) => t.toLowerCase() === tag.toLowerCase()
+  );
   if (i !== -1) terms.splice(i, 1);
   else terms.push(tag);
   store.setSearchTerm(terms.join(" "));
 }
 
-const expanded = ref(new Set());
-function toggleTags(id) {
+const expanded = ref<Set<string>>(new Set());
+
+function toggleTags(id: string): void {
   if (expanded.value.has(id)) expanded.value.delete(id);
   else expanded.value.add(id);
 }
-const isExpanded = (id) => expanded.value.has(id);
+
+const isExpanded = (id: string): boolean => expanded.value.has(id);
 
 // compute visible/hidden tags for each recipe (cap shown tags unless expanded)
-function tagsFor(r, cap = 6) {
+function tagsFor(
+  r: Recipe,
+  cap: number = 6
+): { visible: string[]; hiddenCount: number } {
   const tags = r.tags ?? [];
   const showAll = isExpanded(r.id);
   const visible = showAll ? tags : tags.slice(0, cap);

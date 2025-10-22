@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
 import mockRecipes from "./mockRecipes.json";
+import type { Recipe, RecipesState, SearchLogic, FuzzyMatchResult, RecipeInput } from "@/types";
 
 // Fuzzy search utility functions
-const fuzzyMatch = (text, query) => {
+const fuzzyMatch = (text: string, query: string): FuzzyMatchResult => {
   const textLower = text.toLowerCase();
   const queryLower = query.toLowerCase();
 
@@ -39,7 +40,7 @@ const fuzzyMatch = (text, query) => {
   return { score: 0, matched: false };
 };
 
-const calculateFuzzyScore = (recipe, query) => {
+const calculateFuzzyScore = (recipe: Recipe, query: string): number => {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 0;
 
@@ -87,14 +88,14 @@ const calculateFuzzyScore = (recipe, query) => {
 
 // Pinia store for managing recipes and mocking API interactions
 export const useRecipesStore = defineStore("recipes", {
-  state: () => ({
-    recipes: mockRecipes,
+  state: (): RecipesState => ({
+    recipes: mockRecipes as Recipe[],
     searchTerm: "",
-    searchLogic: "AND", // 'AND' or 'OR'
-    fuzzyThreshold: 100, // Default for fuzzy matches
+    searchLogic: "AND" as SearchLogic,
+    fuzzyThreshold: 100,
   }),
   getters: {
-    filteredRecipes(state) {
+    filteredRecipes(state): Recipe[] {
       const q = state.searchTerm.trim();
       if (!q) return state.recipes;
 
@@ -113,21 +114,21 @@ export const useRecipesStore = defineStore("recipes", {
         }
       });
     },
-    getById: (state) => (id) => state.recipes.find((r) => r.id === id) || null,
+    getById: (state) => (id: string): Recipe | null => state.recipes.find((r) => r.id === id) || null,
   },
   actions: {
-    setSearchTerm(v) {
+    setSearchTerm(v: string): void {
       this.searchTerm = v;
     },
-    setSearchLogic(v) {
+    setSearchLogic(v: SearchLogic): void {
       this.searchLogic = v;
     },
-    setFuzzyThreshold(v) {
+    setFuzzyThreshold(v: number): void {
       this.fuzzyThreshold = Math.max(0, Math.min(100, v));
     },
 
-    addRecipe(partial) {
-      const recipe = {
+    addRecipe(partial: RecipeInput): string {
+      const recipe: Recipe = {
         id: (Date.now() + Math.random()).toString(36),
         image: partial.image || "",
         title: partial.title?.trim() || "Untitled Recipe",
@@ -142,17 +143,18 @@ export const useRecipesStore = defineStore("recipes", {
         tags: Array.isArray(partial.tags) ? partial.tags : [],
         caloriesPerServing: Number(partial.caloriesPerServing) || 0,
         servingSize: Number(partial.servingSize) || 0,
+        favorite: partial.favorite || false,
       };
       this.recipes.unshift(recipe);
       return recipe.id;
     },
 
-    deleteRecipe(id) {
+    deleteRecipe(id: string): void {
       const i = this.recipes.findIndex((r) => r.id === id);
       if (i !== -1) this.recipes.splice(i, 1);
     },
 
-    updateRecipe(id, patch) {
+    updateRecipe(id: string, patch: Partial<RecipeInput>): void {
       const i = this.recipes.findIndex((r) => r.id === id);
       if (i === -1) return;
       const normalized = {
@@ -171,10 +173,14 @@ export const useRecipesStore = defineStore("recipes", {
           ? patch.instructions.filter(Boolean)
           : undefined,
       };
-      this.recipes[i] = { ...this.recipes[i], ...normalized };
+      // Filter out undefined values and update recipe
+      const filteredUpdate = Object.fromEntries(
+        Object.entries(normalized).filter(([_, value]) => value !== undefined)
+      ) as Partial<Recipe>;
+      this.recipes[i] = { ...this.recipes[i], ...filteredUpdate };
     },
 
-    toggleFavorite(id) {
+    toggleFavorite(id: string): void {
       const i = this.recipes.findIndex((r) => r.id === id);
       if (i === -1) return;
       this.recipes[i].favorite = !this.recipes[i].favorite;

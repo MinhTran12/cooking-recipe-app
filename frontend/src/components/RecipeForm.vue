@@ -1,11 +1,24 @@
-<script setup>
-import { reactive, watch, computed } from "vue";
+<script setup lang="ts">
+import { reactive, watch } from "vue";
+import type { Recipe, RecipeInput } from "@/types";
 
-const props = defineProps({
-  modelValue: { type: Object, default: null }, // edit mode if present
-  submitLabel: { type: String, default: "Add" },
+interface Props {
+  modelValue?: Recipe | null;
+  submitLabel?: string;
+}
+
+interface Emits {
+  (e: "submit", payload: RecipeInput): void;
+  (e: "update:modelValue", value: Recipe | null): void;
+  (e: "cancel"): void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: null,
+  submitLabel: "Add",
 });
-const emit = defineEmits(["submit", "update:modelValue", "cancel"]);
+
+const emit = defineEmits<Emits>();
 
 const form = reactive({
   title: "",
@@ -31,31 +44,32 @@ watch(
       return;
     }
     form.title = r.title || "";
-    form.timeToPrepare = r.timeToPrepare ?? "";
+    form.timeToPrepare = String(r.timeToPrepare ?? "");
     form.ingredientsInput = (r.ingredients || []).join(", ");
     form.instructionsInput = (r.instructions || []).join("\n");
     form.tagsInput = (r.tags || []).join(", ");
-    form.caloriesPerServing = r.caloriesPerServing ?? "";
-    form.servingSize = r.servingSize ?? "";
+    form.caloriesPerServing = String(r.caloriesPerServing ?? "");
+    form.servingSize = String(r.servingSize ?? "");
   },
   { immediate: true }
 );
 
-function toList(input) {
+function toList(input: string): string[] {
   return input
     .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-function toSteps(input) {
-  return input
-    .split("\n")
-    .map((s) => s.trim())
+    .map((s: string) => s.trim())
     .filter(Boolean);
 }
 
-function onSubmit() {
-  const payload = {
+function toSteps(input: string): string[] {
+  return input
+    .split("\n")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+}
+
+function onSubmit(): void {
+  const payload: RecipeInput = {
     title: form.title || "Untitled Recipe",
     timeToPrepare: Number(form.timeToPrepare) || 0,
     ingredients: toList(form.ingredientsInput),

@@ -1,30 +1,36 @@
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">
+import { computed, ref } from "vue";
 import { useRouter, useRoute, RouterLink } from "vue-router";
-import { useRecipesStore } from "../stores/recipes";
+import { useRecipesStore } from "@/stores/recipes";
+import type { Recipe } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
 const store = useRecipesStore();
 
-const recipe = computed(() => store.getById(route.params.id));
+const recipe = computed((): Recipe | null =>
+  store.getById(route.params.id as string)
+);
 
-function goBack() {
+function goBack(): void {
   router.push({ name: "recipes" });
 }
-import { ref } from "vue";
-const showConfirm = ref(false);
-function askDelete() {
+
+const showConfirm = ref<boolean>(false);
+
+function askDelete(): void {
   showConfirm.value = true;
 }
-function confirmDelete() {
+
+function confirmDelete(): void {
   if (recipe.value) {
     store.deleteRecipe(recipe.value.id);
     router.push({ name: "recipes" });
   }
   showConfirm.value = false;
 }
-function cancelDelete() {
+
+function cancelDelete(): void {
   showConfirm.value = false;
 }
 </script>
