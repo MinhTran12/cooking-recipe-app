@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import mockRecipes from "./mockRecipes.json";
+import mockRecipes from "@/stores/mockRecipes.json";
 import type { Recipe, RecipesState, SearchLogic, FuzzyMatchResult, RecipeInput } from "@/types";
 
 // Fuzzy search utility functions

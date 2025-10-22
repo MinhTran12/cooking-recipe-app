@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import RecipesPage from "../pages/RecipesPage.vue";
-import RecipeDetailPage from "../pages/RecipeDetailPage.vue";
-import RecipeEditPage from "../pages/RecipeEditPage.vue";
-import AddRecipePage from "../pages/AddRecipePage.vue";
+import RecipesPage from "@/pages/RecipesPage.vue";
+import RecipeDetailPage from "@/pages/RecipeDetailPage.vue";
+import RecipeEditPage from "@/pages/RecipeEditPage.vue";
+import AddRecipePage from "@/pages/AddRecipePage.vue";
 
 const routes = [
   { path: "/", redirect: "/recipes" }, // default redirect
