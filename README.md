@@ -42,8 +42,8 @@ A recipe object contains the following fields:
 ### 1. Clone the repository
 
 ```sh
-git clone https://github.com/MinhTran12/recipe-manager-front-end.git
-cd recipe-manager-front-end
+git clone https://github.com/MinhTran12/cooking-recipe-app.git
+cd cooking-recipe-app
 ```
 
 ### 2. Install front end Dependencies
