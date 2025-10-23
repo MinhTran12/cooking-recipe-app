@@ -1,10 +1,10 @@
-<script setup>
-import SearchBar from "../components/SearchBar.vue";
-import RecipeList from "../components/RecipeList.vue";
+<script setup lang="ts">
+import SearchBar from "@/components/SearchBar.vue";
+import RecipeList from "@/components/RecipeList.vue";
 import { RouterLink } from "vue-router";
 import { ref } from "vue";
 
-const filter = ref("all");
+const filter = ref<string>("all");
 </script>
 
 <template>

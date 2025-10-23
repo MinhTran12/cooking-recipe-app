@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { mount } from "@vue/test-utils";
+import { mount, VueWrapper } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import SearchBar from "../SearchBar.vue";
-import { useRecipesStore } from "../../stores/recipes";
+import SearchBar from "@/components/SearchBar.vue";
+import { useRecipesStore } from "@/stores/recipes";
+import type { ComponentPublicInstance } from "vue";
 
 describe("SearchBar Component", () => {
-  let wrapper;
-  let store;
+  let wrapper: VueWrapper<ComponentPublicInstance>;
+  let store: ReturnType<typeof useRecipesStore>;
 
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -24,7 +25,7 @@ describe("SearchBar Component", () => {
       const input = wrapper.find('input[placeholder*="Search by name"]');
       expect(input.exists()).toBe(true);
       expect(input.attributes("placeholder")).toBe(
-        "Search by name, tag, or ingredient..."
+        "Search by name and tag..."
       );
     });
 
@@ -46,7 +47,7 @@ describe("SearchBar Component", () => {
       await input.setValue("pasta");
 
       // Check that the input value was set
-      expect(input.element.value).toBe("pasta");
+      expect((input.element as HTMLInputElement).value).toBe("pasta");
     });
 
     it("should have button that can be clicked", async () => {
@@ -63,7 +64,7 @@ describe("SearchBar Component", () => {
 
       await slider.setValue(50);
 
-      expect(slider.element.value).toBe("50");
+      expect((slider.element as HTMLInputElement).value).toBe("50");
     });
   });
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
-import { useRecipesStore } from "../recipes";
+import { useRecipesStore } from "@/stores/recipes";
+import type { Recipe, RecipeInput } from "@/types";
 
 describe("Recipes Store", () => {
   beforeEach(() => {
@@ -22,7 +23,7 @@ describe("Recipes Store", () => {
   });
 
   describe("Basic Actions", () => {
-    let store;
+    let store: ReturnType<typeof useRecipesStore>;
 
     beforeEach(() => {
       store = useRecipesStore();
@@ -52,7 +53,7 @@ describe("Recipes Store", () => {
   });
 
   describe("Recipe Management", () => {
-    let store;
+    let store: ReturnType<typeof useRecipesStore>;
 
     beforeEach(() => {
       store = useRecipesStore();
@@ -60,7 +61,7 @@ describe("Recipes Store", () => {
 
     it("should add a new recipe", () => {
       const initialCount = store.recipes.length;
-      const newRecipe = {
+      const newRecipe: RecipeInput = {
         title: "Test Recipe",
         ingredients: ["ingredient1", "ingredient2"],
         instructions: ["step1", "step2"],
@@ -107,7 +108,7 @@ describe("Recipes Store", () => {
   });
 
   describe("Search Functionality", () => {
-    let store;
+    let store: ReturnType<typeof useRecipesStore>;
 
     beforeEach(() => {
       store = useRecipesStore();
@@ -126,9 +127,9 @@ describe("Recipes Store", () => {
       expect(filtered.length).toBeGreaterThan(0);
 
       // All filtered recipes should contain 'quick' in title or tags
-      filtered.forEach((recipe) => {
+      filtered.forEach((recipe: Recipe) => {
         const titleMatch = recipe.title.toLowerCase().includes("quick");
-        const tagMatch = recipe.tags.some((tag) =>
+        const tagMatch = recipe.tags.some((tag: string) =>
           tag.toLowerCase().includes("quick")
         );
         expect(titleMatch || tagMatch).toBe(true);
@@ -162,9 +163,9 @@ describe("Recipes Store", () => {
 
       // Should find recipes with "pasta" in tags or title
       const hasPasta = filtered.some(
-        (recipe) =>
+        (recipe: Recipe) =>
           recipe.title.toLowerCase().includes("pasta") ||
-          recipe.tags.some((tag) => tag.toLowerCase().includes("pasta"))
+          recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta"))
       );
       expect(hasPasta).toBe(true);
     });
@@ -182,7 +183,7 @@ describe("Recipes Store", () => {
     });
 
     describe("Fuzzy Search Functionality", () => {
-      let store;
+      let store: ReturnType<typeof useRecipesStore>;
 
       beforeEach(() => {
         store = useRecipesStore();
@@ -196,7 +197,7 @@ describe("Recipes Store", () => {
 
         // Should find recipes with "pasta" in title or tags
         const hasExactMatch = filtered.some(
-          (recipe) =>
+          (recipe: Recipe) =>
             recipe.title.toLowerCase().includes("pasta") ||
             recipe.tags.some((tag) => tag.toLowerCase().includes("pasta"))
         );
@@ -211,9 +212,9 @@ describe("Recipes Store", () => {
 
         // Should still find pasta recipes despite partial match
         const hasFuzzyMatch = filtered.some(
-          (recipe) =>
+          (recipe: Recipe) =>
             recipe.title.toLowerCase().includes("pasta") ||
-            recipe.tags.some((tag) => tag.toLowerCase().includes("pasta"))
+            recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta"))
         );
         expect(hasFuzzyMatch).toBe(true);
       });
@@ -244,10 +245,10 @@ describe("Recipes Store", () => {
 
         // Should find matches in title, tags, or ingredients
         const hasMatch = filtered.some(
-          (recipe) =>
+          (recipe: Recipe) =>
             recipe.title.toLowerCase().includes("pasta") ||
-            recipe.tags.some((tag) => tag.toLowerCase().includes("pasta")) ||
-            recipe.ingredients.some((ingredient) =>
+            recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta")) ||
+            recipe.ingredients.some((ingredient: string) =>
               ingredient.toLowerCase().includes("pasta")
             )
         );

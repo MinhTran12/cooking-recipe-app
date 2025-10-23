@@ -1,21 +1,25 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { useRecipesStore } from "../stores/recipes";
-import RecipeForm from "../components/RecipeForm.vue";
+import { useRecipesStore } from "@/stores/recipes";
+import RecipeForm from "@/components/RecipeForm.vue";
+import type { Recipe, RecipeInput } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
 const store = useRecipesStore();
 
-const recipe = computed(() => store.getById(route.params.id));
+const recipe = computed((): Recipe | null =>
+  store.getById(route.params.id as string)
+);
 
-function onSubmit(payload) {
+function onSubmit(payload: RecipeInput): void {
   if (!recipe.value) return;
   store.updateRecipe(recipe.value.id, payload);
   router.push({ name: "recipe-detail", params: { id: recipe.value.id } });
 }
-function onCancel() {
+
+function onCancel(): void {
   if (recipe.value) {
     router.push({ name: "recipe-detail", params: { id: recipe.value.id } });
   } else {

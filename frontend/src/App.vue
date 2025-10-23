@@ -1,6 +1,6 @@
-<script setup>
-import { RouterLink, RouterView } from "vue-router";
-import "./style.css";
+<script setup lang="ts">
+import { RouterView } from "vue-router";
+import "@/style.css";
 </script>
 
 <template>

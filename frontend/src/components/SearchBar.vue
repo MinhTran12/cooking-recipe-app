@@ -1,16 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import { storeToRefs } from "pinia";
-import { useRecipesStore } from "../stores/recipes";
+import { useRecipesStore } from "@/stores/recipes";
 
 const store = useRecipesStore();
 const { searchTerm, searchLogic, fuzzyThreshold } = storeToRefs(store);
 
-const toggleLogic = () => {
+const toggleLogic = (): void => {
   store.setSearchLogic(searchLogic.value === "AND" ? "OR" : "AND");
 };
 
-const updateThreshold = (event) => {
-  store.setFuzzyThreshold(parseInt(event.target.value));
+const updateThreshold = (event: Event): void => {
+  const target = event.target as HTMLInputElement;
+  store.setFuzzyThreshold(parseInt(target.value));
 };
 </script>
 
