@@ -66,6 +66,7 @@ cd cooking-recipe-app
 cd backend
 pip install -r requirements.txt
 docker-compose up -d
+python db/seed_database.py
 python main.py
 ```
 
