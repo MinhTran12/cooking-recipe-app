@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import mockRecipes from "@/stores/mockRecipes.json";
+import { recipeAPI, apiRecipeToFrontend, frontendRecipeToApi } from "@/services/recipeAPI";
 import type { Recipe, RecipesState, SearchLogic, FuzzyMatchResult, RecipeInput } from "@/types";
 
 // Fuzzy search utility functions
@@ -59,20 +59,24 @@ const calculateFuzzyScore = (recipe: Recipe, query: string): number => {
     }
 
     // Check tags
-    for (const tag of recipe.tags) {
-      const tagMatch = fuzzyMatch(tag, word);
-      if (tagMatch.matched) {
-        bestScore = Math.max(bestScore, tagMatch.score);
-        wordMatched = true;
+    if (recipe.tags) {
+      for (const tag of recipe.tags) {
+        const tagMatch = fuzzyMatch(tag, word);
+        if (tagMatch.matched) {
+          bestScore = Math.max(bestScore, tagMatch.score);
+          wordMatched = true;
+        }
       }
     }
 
     // Check ingredients
-    for (const ingredient of recipe.ingredients) {
-      const ingredientMatch = fuzzyMatch(ingredient, word);
-      if (ingredientMatch.matched) {
-        bestScore = Math.max(bestScore, ingredientMatch.score * 0.8); // Ingredients get lower weight
-        wordMatched = true;
+    if (recipe.ingredients) {
+      for (const ingredient of recipe.ingredients) {
+        const ingredientMatch = fuzzyMatch(ingredient, word);
+        if (ingredientMatch.matched) {
+          bestScore = Math.max(bestScore, ingredientMatch.score * 0.8); // Ingredients get lower weight
+          wordMatched = true;
+        }
       }
     }
 
@@ -86,13 +90,15 @@ const calculateFuzzyScore = (recipe: Recipe, query: string): number => {
   return matchedWords > 0 ? totalScore : 0;
 };
 
-// Pinia store for managing recipes and mocking API interactions
+// Pinia store for managing recipes with API integration
 export const useRecipesStore = defineStore("recipes", {
   state: (): RecipesState => ({
-    recipes: mockRecipes as Recipe[],
+    recipes: [],
     searchTerm: "",
     searchLogic: "AND" as SearchLogic,
     fuzzyThreshold: 100,
+    loading: false,
+    error: null,
   }),
   getters: {
     filteredRecipes(state): Recipe[] {
@@ -127,63 +133,105 @@ export const useRecipesStore = defineStore("recipes", {
       this.fuzzyThreshold = Math.max(0, Math.min(100, v));
     },
 
-    addRecipe(partial: RecipeInput): string {
-      const recipe: Recipe = {
-        id: (Date.now() + Math.random()).toString(36),
-        image: partial.image || "",
-        title: partial.title?.trim() || "Untitled Recipe",
-        ingredients: Array.isArray(partial.ingredients)
-          ? partial.ingredients
-          : [],
-        // ensure array of non-empty strings
-        instructions: Array.isArray(partial.instructions)
-          ? partial.instructions.filter(Boolean)
-          : [],
-        timeToPrepare: Number(partial.timeToPrepare) || 0,
-        tags: Array.isArray(partial.tags) ? partial.tags : [],
-        caloriesPerServing: Number(partial.caloriesPerServing) || 0,
-        servingSize: Number(partial.servingSize) || 0,
-        favorite: partial.favorite || false,
-      };
-      this.recipes.unshift(recipe);
-      return recipe.id;
+    // API Actions
+    async loadRecipes(): Promise<void> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const apiResult = await recipeAPI.getAllRecipes();
+        this.recipes = apiResult.recipes.map(apiRecipeToFrontend);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to load recipes';
+        console.error('Failed to load recipes:', error);
+      } finally {
+        this.loading = false;
+      }
     },
 
-    deleteRecipe(id: string): void {
-      const i = this.recipes.findIndex((r) => r.id === id);
-      if (i !== -1) this.recipes.splice(i, 1);
+    async addRecipe(partial: RecipeInput): Promise<string> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const apiRecipeInput = frontendRecipeToApi(partial);
+        const apiRecipe = await recipeAPI.createRecipe(apiRecipeInput);
+        const recipe = apiRecipeToFrontend(apiRecipe);
+        this.recipes.unshift(recipe);
+        return recipe.id;
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to create recipe';
+        console.error('Failed to create recipe:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     },
 
-    updateRecipe(id: string, patch: Partial<RecipeInput>): void {
+    async deleteRecipe(id: string): Promise<void> {
+      this.loading = true;
+      this.error = null;
+      try {
+        await recipeAPI.deleteRecipe(id);
+        const i = this.recipes.findIndex((r) => r.id === id);
+        if (i !== -1) this.recipes.splice(i, 1);
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to delete recipe';
+        console.error('Failed to delete recipe:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateRecipe(id: string, patch: Partial<RecipeInput>): Promise<void> {
+      this.loading = true;
+      this.error = null;
+      try {
+        const apiRecipeInput = frontendRecipeToApi(patch as RecipeInput);
+        const apiRecipe = await recipeAPI.updateRecipe(id, apiRecipeInput);
+        const updatedRecipe = apiRecipeToFrontend(apiRecipe);
+        
+        const i = this.recipes.findIndex((r) => r.id === id);
+        if (i !== -1) {
+          this.recipes[i] = updatedRecipe;
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to update recipe';
+        console.error('Failed to update recipe:', error);
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async toggleFavorite(id: string): Promise<void> {
+      // Find the recipe
       const i = this.recipes.findIndex((r) => r.id === id);
       if (i === -1) return;
-      const normalized = {
-        ...patch,
-        title: typeof patch.title === "string" ? patch.title.trim() : undefined,
-        timeToPrepare:
-          patch.timeToPrepare != null ? Number(patch.timeToPrepare) : undefined,
-        caloriesPerServing:
-          patch.caloriesPerServing != null
-            ? Number(patch.caloriesPerServing)
-            : undefined,
-        servingSize:
-          patch.servingSize != null ? Number(patch.servingSize) : undefined,
-        // if provided, keep instructions as string[]
-        instructions: Array.isArray(patch.instructions)
-          ? patch.instructions.filter(Boolean)
-          : undefined,
-      };
-      // Filter out undefined values and update recipe
-      const filteredUpdate = Object.fromEntries(
-        Object.entries(normalized).filter(([_, value]) => value !== undefined)
-      ) as Partial<Recipe>;
-      this.recipes[i] = { ...this.recipes[i], ...filteredUpdate };
-    },
 
-    toggleFavorite(id: string): void {
-      const i = this.recipes.findIndex((r) => r.id === id);
-      if (i === -1) return;
-      this.recipes[i].favorite = !this.recipes[i].favorite;
+      // Store original state for potential rollback
+      const originalFavoriteState = this.recipes[i].favorite;
+      
+      // Optimistically update UI immediately
+      this.recipes[i].favorite = !originalFavoriteState;
+
+      try {
+        // Make API call in background
+        const result = await recipeAPI.toggleFavorite(id);
+        // Ensure our optimistic update matches the server response
+        this.recipes[i].favorite = result.favorite;
+      } catch (error) {
+        // Rollback on failure
+        this.recipes[i].favorite = originalFavoriteState;
+        
+        // Show error without affecting loading state
+        console.error('Failed to toggle favorite:', error);
+        
+        // Optionally show a non-intrusive error (toast notification)
+        // this.showToast('Failed to update favorite status');
+        
+        throw error;
+      }
+      // Note: NO loading state changes - keeps UI smooth
     },
   },
 });

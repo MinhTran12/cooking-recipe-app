@@ -71,12 +71,19 @@ function toSteps(input: string): string[] {
 function onSubmit(): void {
   const payload: RecipeInput = {
     title: form.title || "Untitled Recipe",
-    timeToPrepare: Number(form.timeToPrepare) || 0,
-    ingredients: toList(form.ingredientsInput),
-    instructions: toSteps(form.instructionsInput),
-    tags: toList(form.tagsInput),
-    caloriesPerServing: Number(form.caloriesPerServing) || 0,
-    servingSize: Number(form.servingSize) || 0,
+    // Only include fields if they have values (backend expects optional fields)
+    ...(form.timeToPrepare && { timeToPrepare: Number(form.timeToPrepare) }),
+    ...(form.ingredientsInput && {
+      ingredients: toList(form.ingredientsInput),
+    }),
+    ...(form.instructionsInput && {
+      instructions: toSteps(form.instructionsInput),
+    }),
+    ...(form.tagsInput && { tags: toList(form.tagsInput) }),
+    ...(form.caloriesPerServing && {
+      caloriesPerServing: Number(form.caloriesPerServing),
+    }),
+    ...(form.servingSize && { servingSize: Number(form.servingSize) }),
   };
   emit("submit", payload);
 }
@@ -103,7 +110,7 @@ function onSubmit(): void {
         type="number"
         min="0"
         v-model="form.timeToPrepare"
-        required
+        placeholder="30"
         class="w-full px-4 py-2 border border-black bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
       />
     </div>
