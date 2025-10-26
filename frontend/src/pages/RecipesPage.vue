@@ -2,9 +2,16 @@
 import SearchBar from "@/components/SearchBar.vue";
 import RecipeList from "@/components/RecipeList.vue";
 import { RouterLink } from "vue-router";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRecipesStore } from "@/stores/recipes";
 
 const filter = ref<string>("all");
+const store = useRecipesStore();
+
+// Load recipes when page mounts
+onMounted(() => {
+  store.loadRecipes();
+});
 </script>
 
 <template>

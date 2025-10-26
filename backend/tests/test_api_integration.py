@@ -69,12 +69,41 @@ class TestRecipeAPIIntegration:
         delete_response = client.delete(f"/api/recipes/{recipe_id}")
         assert delete_response.status_code == 200
     
+    def test_create_minimal_recipe_success(self, client, minimal_recipe_data):
+        """Test POST /api/recipes creates a recipe with only title."""
+        response = client.post("/api/recipes", json=minimal_recipe_data)
+        
+        assert response.status_code == 201
+        data = response.json()
+        
+        # Check that recipe was created with correct data
+        assert data["title"] == minimal_recipe_data["title"]
+        
+        # Check that optional fields are None/default
+        assert data["ingredients"] is None
+        assert data["instructions"] is None
+        assert data["time_to_prepare"] is None
+        assert data["tags"] is None
+        assert data["calories_per_serving"] is None
+        assert data["serving_size"] is None
+        assert data["favorite"] is False  # Default value
+        assert data["image"] is None
+        
+        # Check that ID and timestamps were generated
+        assert "id" in data
+        assert "created_at" in data
+        assert "updated_at" in data
+        
+        # Cleanup: delete the created recipe
+        recipe_id = data["id"]
+        delete_response = client.delete(f"/api/recipes/{recipe_id}")
+        assert delete_response.status_code == 200
+    
     def test_create_recipe_invalid_data(self, client):
         """Test POST /api/recipes with invalid data returns validation error."""
         invalid_data = {
             "title": "",  # Empty title should fail validation
-            "ingredients": [],  # Empty ingredients should fail validation
-            "time_to_prepare": -5  # Negative time should fail validation
+            "time_to_prepare": -5  # Negative time should fail validation when provided
         }
         
         response = client.post("/api/recipes", json=invalid_data)

@@ -1,20 +1,28 @@
-// Core Recipe interface based on the mockRecipes.json structure
 export interface Recipe {
   id: string
   title: string
   image?: string
-  ingredients: string[]
-  instructions: string[]
-  timeToPrepare: number
-  tags: string[]
-  caloriesPerServing: number
-  servingSize: number
-  favorite: boolean
+  ingredients?: string[]
+  instructions?: string[]
+  timeToPrepare?: number
+  tags?: string[]
+  caloriesPerServing?: number
+  servingSize?: number
+  favorite?: boolean
+  createdAt?: string
+  updatedAt?: string
 }
 
 // Partial recipe for creating/updating recipes
-export type RecipeInput = Omit<Recipe, 'id' | 'favorite'> & {
-  id?: string
+export type RecipeInput = {
+  title: string           // Only title is required
+  image?: string
+  ingredients?: string[]
+  instructions?: string[]
+  timeToPrepare?: number
+  tags?: string[]
+  caloriesPerServing?: number
+  servingSize?: number
   favorite?: boolean
 }
 
@@ -44,6 +52,8 @@ export interface RecipesState {
   searchTerm: string
   searchLogic: SearchLogic
   fuzzyThreshold: number
+  loading: boolean
+  error: string | null
 }
 
 // Router param types

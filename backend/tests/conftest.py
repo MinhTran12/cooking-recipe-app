@@ -28,6 +28,14 @@ def sample_recipe_data():
 
 
 @pytest.fixture
+def minimal_recipe_data():
+    """Minimal recipe data for testing (title only)."""
+    return {
+        "title": "Minimal Test Recipe"
+    }
+
+
+@pytest.fixture
 def updated_recipe_data():
     """Sample recipe update data for testing."""
     return {
