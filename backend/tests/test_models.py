@@ -28,11 +28,29 @@ class TestPydanticModels:
         assert recipe.time_to_prepare == 30
         assert recipe.favorite is False
     
-    def test_recipe_create_missing_required_fields(self):
-        """Test RecipeCreate fails with missing required fields."""
+    def test_recipe_create_minimal_data(self):
+        """Test RecipeCreate with only required field (title)."""
+        minimal_data = {
+            "title": "Minimal Recipe"
+        }
+        
+        recipe = RecipeCreate(**minimal_data)
+        
+        assert recipe.title == "Minimal Recipe"
+        assert recipe.ingredients is None
+        assert recipe.instructions is None
+        assert recipe.time_to_prepare is None
+        assert recipe.calories_per_serving is None
+        assert recipe.serving_size is None
+        assert recipe.tags is None
+        assert recipe.favorite is False  # Should default to False
+        assert recipe.image is None
+    
+    def test_recipe_create_missing_title(self):
+        """Test RecipeCreate fails when title is missing (only required field)."""
         invalid_data = {
-            "title": "Test Recipe"
-            # Missing required fields: ingredients, instructions, etc.
+            "ingredients": ["test"],
+            # Missing title - the only required field
         }
         
         with pytest.raises(ValidationError) as exc_info:
@@ -41,21 +59,15 @@ class TestPydanticModels:
         errors = exc_info.value.errors()
         missing_fields = [error["loc"][0] for error in errors if error["type"] == "missing"]
         
-        assert "ingredients" in missing_fields
-        assert "instructions" in missing_fields
-        assert "time_to_prepare" in missing_fields
-        assert "calories_per_serving" in missing_fields
-        assert "serving_size" in missing_fields
+        assert "title" in missing_fields
     
     def test_recipe_create_invalid_field_types(self):
         """Test RecipeCreate fails with invalid field types."""
         invalid_data = {
             "title": "",  # Empty string should fail min_length validation
-            "ingredients": [],  # Empty list should fail min_length validation
-            "instructions": [],  # Empty list should fail min_length validation
-            "time_to_prepare": 0,  # Should fail ge=1 validation
-            "calories_per_serving": 0,  # Should fail ge=1 validation
-            "serving_size": 0,  # Should fail ge=1 validation
+            "time_to_prepare": 0,  # Should fail ge=1 validation when provided
+            "calories_per_serving": 0,  # Should fail ge=1 validation when provided
+            "serving_size": 0,  # Should fail ge=1 validation when provided
         }
         
         with pytest.raises(ValidationError) as exc_info:
@@ -64,22 +76,26 @@ class TestPydanticModels:
         errors = exc_info.value.errors()
         assert len(errors) > 0
     
-    def test_recipe_create_with_defaults(self):
-        """Test RecipeCreate uses default values correctly."""
-        minimal_data = {
-            "title": "Minimal Recipe",
+    def test_recipe_create_with_partial_data(self):
+        """Test RecipeCreate with some optional fields provided."""
+        partial_data = {
+            "title": "Partial Recipe",
             "ingredients": ["ingredient1"],
-            "instructions": ["step1"],
             "time_to_prepare": 15,
-            "calories_per_serving": 100,
-            "serving_size": 1
+            # Missing instructions, calories, serving_size - should be allowed
         }
         
-        recipe = RecipeCreate(**minimal_data)
+        recipe = RecipeCreate(**partial_data)
         
-        assert recipe.tags == []  # Should default to empty list
+        assert recipe.title == "Partial Recipe"
+        assert recipe.ingredients == ["ingredient1"]
+        assert recipe.time_to_prepare == 15
+        assert recipe.instructions is None
+        assert recipe.calories_per_serving is None
+        assert recipe.serving_size is None
+        assert recipe.tags is None
         assert recipe.favorite is False  # Should default to False
-        assert recipe.image is None  # Should default to None
+        assert recipe.image is None
     
     def test_recipe_update_all_optional(self):
         """Test RecipeUpdate allows all fields to be optional."""
@@ -118,6 +134,35 @@ class TestPydanticModels:
         assert len(recipe.ingredients) == 2
         assert len(recipe.instructions) == 2
         assert recipe.favorite is True
+    
+    def test_recipe_model_with_minimal_fields(self):
+        """Test Recipe model with minimal fields (title only + system fields)."""
+        recipe_data = {
+            "id": "123e4567-e89b-12d3-a456-426614174000",
+            "title": "Minimal Recipe",
+            "image": None,
+            "ingredients": None,
+            "instructions": None,
+            "time_to_prepare": None,
+            "tags": None,
+            "calories_per_serving": None,
+            "serving_size": None,
+            "favorite": False,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now()
+        }
+        
+        recipe = Recipe(**recipe_data)
+        
+        assert recipe.id == "123e4567-e89b-12d3-a456-426614174000"
+        assert recipe.title == "Minimal Recipe"
+        assert recipe.ingredients is None
+        assert recipe.instructions is None
+        assert recipe.time_to_prepare is None
+        assert recipe.calories_per_serving is None
+        assert recipe.serving_size is None
+        assert recipe.tags is None
+        assert recipe.favorite is False
     
     def test_recipe_list_model(self):
         """Test RecipeList model structure."""

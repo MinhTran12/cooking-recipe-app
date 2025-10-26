@@ -9,13 +9,13 @@ class RecipeBase(BaseModel):
     """Base recipe model with common fields."""
     title: str = Field(..., min_length=1, max_length=255)
     image: Optional[str] = Field(None, max_length=500)
-    ingredients: List[str] = Field(..., min_length=1)
-    instructions: List[str] = Field(..., min_length=1)
-    time_to_prepare: int = Field(..., ge=1, description="Time to prepare in minutes")
-    tags: List[str] = Field(default_factory=list)
-    calories_per_serving: int = Field(..., ge=1, description="Calories per serving")
-    serving_size: int = Field(..., ge=1, description="Number of servings")
-    favorite: bool = Field(default=False)
+    ingredients: Optional[List[str]] = Field(None)
+    instructions: Optional[List[str]] = Field(None)
+    time_to_prepare: Optional[int] = Field(None, ge=1, description="Time to prepare in minutes")
+    tags: Optional[List[str]] = Field(None)
+    calories_per_serving: Optional[int] = Field(None, ge=1, description="Calories per serving")
+    serving_size: Optional[int] = Field(None, ge=1, description="Number of servings")
+    favorite: Optional[bool] = Field(default=False)
 
 
 class RecipeCreate(RecipeBase):
@@ -27,8 +27,8 @@ class RecipeUpdate(BaseModel):
     """Model for updating an existing recipe (all fields optional)."""
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     image: Optional[str] = Field(None, max_length=500)
-    ingredients: Optional[List[str]] = Field(None, min_length=1)
-    instructions: Optional[List[str]] = Field(None, min_length=1)
+    ingredients: Optional[List[str]] = Field(None)
+    instructions: Optional[List[str]] = Field(None)
     time_to_prepare: Optional[int] = Field(None, ge=1)
     tags: Optional[List[str]] = None
     calories_per_serving: Optional[int] = Field(None, ge=1)
