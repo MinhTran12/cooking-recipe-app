@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRouter, useRoute, RouterLink } from "vue-router";
 import { useRecipesStore } from "@/stores/recipes";
 import type { Recipe } from "@/types";
@@ -12,6 +12,16 @@ const recipe = computed((): Recipe | null =>
   store.getById(route.params.id as string)
 );
 
+const deleteLoading = ref(false);
+const deleteError = ref<string | null>(null);
+
+// Load recipes if not already loaded
+onMounted(() => {
+  if (store.recipes.length === 0) {
+    store.loadRecipes();
+  }
+});
+
 function goBack(): void {
   router.push({ name: "recipes" });
 }
@@ -20,18 +30,39 @@ const showConfirm = ref<boolean>(false);
 
 function askDelete(): void {
   showConfirm.value = true;
+  deleteError.value = null;
 }
 
-function confirmDelete(): void {
+async function confirmDelete(): Promise<void> {
   if (recipe.value) {
-    store.deleteRecipe(recipe.value.id);
-    router.push({ name: "recipes" });
+    deleteLoading.value = true;
+    deleteError.value = null;
+    try {
+      await store.deleteRecipe(recipe.value.id);
+      router.push({ name: "recipes" });
+    } catch (error) {
+      deleteError.value =
+        error instanceof Error ? error.message : "Failed to delete recipe";
+    } finally {
+      deleteLoading.value = false;
+    }
   }
   showConfirm.value = false;
 }
 
 function cancelDelete(): void {
   showConfirm.value = false;
+  deleteError.value = null;
+}
+
+async function toggleFavorite(): Promise<void> {
+  if (recipe.value) {
+    try {
+      await store.toggleFavorite(recipe.value.id);
+    } catch (error) {
+      console.error("Failed to toggle favorite:", error);
+    }
+  }
 }
 </script>
 
@@ -49,7 +80,7 @@ function cancelDelete(): void {
       </button>
       <button
         v-if="recipe"
-        @click="store.toggleFavorite(recipe.id)"
+        @click="toggleFavorite"
         class="absolute top-6 right-4 text-2xl focus:outline-none group transition-colors duration-200 z-10"
         :aria-label="
           recipe.favorite ? 'Unmark as favorite' : 'Mark as favorite'
@@ -67,9 +98,21 @@ function cancelDelete(): void {
           {{ recipe.favorite ? "★" : "☆" }}
         </span>
       </button>
-      <div v-if="!recipe" class="text-center text-gray-500">
+
+      <!-- Loading state -->
+      <div v-if="store.loading" class="text-center text-gray-500">
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-2"
+        ></div>
+        <p>Loading recipe...</p>
+      </div>
+
+      <!-- Recipe not found -->
+      <div v-else-if="!recipe" class="text-center text-gray-500">
         <p>Recipe not found.</p>
       </div>
+
+      <!-- Recipe content -->
       <div v-else>
         <div class="flex flex-col items-center mb-4">
           <div
@@ -96,42 +139,62 @@ function cancelDelete(): void {
         <!-- Basic Info -->
         <div class="flex flex-wrap justify-center gap-4 mb-6">
           <div class="bg-gray-100 rounded px-4 py-2 text-gray-700">
-            <strong>Time:</strong> {{ recipe.timeToPrepare }} min
+            <strong>Time:</strong> {{ recipe.timeToPrepare || "Not specified" }}
+            <span v-if="recipe.timeToPrepare">min</span>
           </div>
           <div class="bg-gray-100 rounded px-4 py-2 text-gray-700">
-            <strong>Serving size:</strong> {{ recipe.servingSize }}
+            <strong>Serving size:</strong>
+            {{ recipe.servingSize || "Not specified" }}
           </div>
           <div class="bg-gray-100 rounded px-4 py-2 text-gray-700">
-            <strong>Calories:</strong> {{ recipe.caloriesPerServing }}
+            <strong>Calories:</strong>
+            {{ recipe.caloriesPerServing || "Not specified" }}
           </div>
         </div>
 
         <!-- Ingredients -->
-        <h3 class="text-lg font-semibold mb-2 text-gray-700">Ingredients</h3>
-        <ul class="mb-6 list-disc list-inside text-gray-600">
-          <li v-for="(ing, i) in recipe.ingredients" :key="i">{{ ing }}</li>
-        </ul>
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">Ingredients</h3>
+          <ul
+            v-if="recipe.ingredients && recipe.ingredients.length > 0"
+            class="list-disc list-inside text-gray-600"
+          >
+            <li v-for="(ing, i) in recipe.ingredients" :key="i">{{ ing }}</li>
+          </ul>
+          <p v-else class="text-gray-500 italic">No ingredients added yet.</p>
+        </div>
 
         <!-- Instructions -->
-        <h3 class="text-lg font-semibold mb-2 text-gray-700">Instructions</h3>
-        <ol class="mb-6 list-decimal list-inside text-gray-600">
-          <li v-for="(step, i) in recipe.instructions" :key="i">{{ step }}</li>
-        </ol>
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">Instructions</h3>
+          <ol
+            v-if="recipe.instructions && recipe.instructions.length > 0"
+            class="list-decimal list-inside text-gray-600"
+          >
+            <li v-for="(step, i) in recipe.instructions" :key="i">
+              {{ step }}
+            </li>
+          </ol>
+          <p v-else class="text-gray-500 italic">No instructions added yet.</p>
+        </div>
 
         <!-- Tags -->
-        <h3 class="text-lg font-semibold mb-2 text-gray-700">Tags</h3>
         <div class="mb-6">
-          <span
-            v-for="t in recipe.tags"
-            :key="t"
-            class="inline-block text-xs rounded px-2 py-1 mr-1 mb-1 border cursor-default"
-            :style="{
-              backgroundColor: '#F5C9B0',
-              color: '#B9375D',
-              borderColor: '#F5C9B0',
-            }"
-            >#{{ t }}</span
-          >
+          <h3 class="text-lg font-semibold mb-2 text-gray-700">Tags</h3>
+          <div v-if="recipe.tags && recipe.tags.length > 0">
+            <span
+              v-for="t in recipe.tags"
+              :key="t"
+              class="inline-block text-xs rounded px-2 py-1 mr-1 mb-1 border cursor-default"
+              :style="{
+                backgroundColor: '#F5C9B0',
+                color: '#B9375D',
+                borderColor: '#F5C9B0',
+              }"
+              >#{{ t }}</span
+            >
+          </div>
+          <p v-else class="text-gray-500 italic">No tags added yet.</p>
         </div>
 
         <div class="flex gap-4">
@@ -162,16 +225,28 @@ function cancelDelete(): void {
             <p class="mb-4 text-gray-800">
               Are you sure you want to delete this recipe?
             </p>
+
+            <!-- Delete error -->
+            <div
+              v-if="deleteError"
+              class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm"
+            >
+              {{ deleteError }}
+            </div>
+
             <div class="flex gap-4 justify-center">
               <button
                 @click="confirmDelete"
-                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                :disabled="deleteLoading"
+                class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition disabled:opacity-50"
               >
-                Delete
+                <span v-if="deleteLoading">Deleting...</span>
+                <span v-else>Delete</span>
               </button>
               <button
                 @click="cancelDelete"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+                :disabled="deleteLoading"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition disabled:opacity-50"
               >
                 Cancel
               </button>

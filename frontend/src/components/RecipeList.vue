@@ -5,7 +5,7 @@ import { computed, ref } from "vue";
 import type { Recipe } from "@/types";
 
 const store = useRecipesStore();
-const { filteredRecipes, searchTerm } = storeToRefs(store);
+const { filteredRecipes, searchTerm, loading, error } = storeToRefs(store);
 
 interface Props {
   filter?: string;
@@ -67,9 +67,34 @@ const paginatedRecipes = computed(() => {
 
 <template>
   <div class="w-full">
-    <p v-if="displayedRecipes.length === 0" class="text-center text-gray-500">
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center text-gray-500 py-8">
+      <div
+        class="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-r-transparent rounded-full"
+      ></div>
+      <p class="mt-2">Loading recipes...</p>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="text-center text-red-500 py-8">
+      <p class="mb-4">❌ {{ error }}</p>
+      <button
+        @click="store.loadRecipes()"
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+      >
+        Try Again
+      </button>
+    </div>
+
+    <!-- No Recipes State -->
+    <p
+      v-else-if="displayedRecipes.length === 0"
+      class="text-center text-gray-500"
+    >
       No recipes found.
     </p>
+
+    <!-- Recipes Grid -->
     <div
       v-else
       class="mx-auto mt-6 w-full max-w-7xl px-4 grid gap-4 sm:gap-6 [grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))]"
