@@ -204,34 +204,21 @@ export const useRecipesStore = defineStore("recipes", {
     },
 
     async toggleFavorite(id: string): Promise<void> {
-      // Find the recipe
-      const i = this.recipes.findIndex((r) => r.id === id);
-      if (i === -1) return;
-
-      // Store original state for potential rollback
-      const originalFavoriteState = this.recipes[i].favorite;
-      
-      // Optimistically update UI immediately
-      this.recipes[i].favorite = !originalFavoriteState;
-
+      this.loading = true;
+      this.error = null;
       try {
-        // Make API call in background
         const result = await recipeAPI.toggleFavorite(id);
-        // Ensure our optimistic update matches the server response
-        this.recipes[i].favorite = result.favorite;
+        const i = this.recipes.findIndex((r) => r.id === id);
+        if (i !== -1) {
+          this.recipes[i].favorite = result.favorite;
+        }
       } catch (error) {
-        // Rollback on failure
-        this.recipes[i].favorite = originalFavoriteState;
-        
-        // Show error without affecting loading state
+        this.error = error instanceof Error ? error.message : 'Failed to toggle favorite';
         console.error('Failed to toggle favorite:', error);
-        
-        // Optionally show a non-intrusive error (toast notification)
-        // this.showToast('Failed to update favorite status');
-        
         throw error;
+      } finally {
+        this.loading = false;
       }
-      // Note: NO loading state changes - keeps UI smooth
     },
   },
 });
