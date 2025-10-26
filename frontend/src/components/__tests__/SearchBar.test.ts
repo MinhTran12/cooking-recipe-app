@@ -1,9 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mount, VueWrapper } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import SearchBar from "@/components/SearchBar.vue";
 import { useRecipesStore } from "@/stores/recipes";
 import type { ComponentPublicInstance } from "vue";
+
+// Mock the API service
+vi.mock("@/services/recipeAPI", () => ({
+  recipeAPI: {
+    getAllRecipes: vi.fn(() => Promise.resolve([])),
+    createRecipe: vi.fn(),
+    updateRecipe: vi.fn(),
+    deleteRecipe: vi.fn()
+  }
+}));
 
 describe("SearchBar Component", () => {
   let wrapper: VueWrapper<ComponentPublicInstance>;

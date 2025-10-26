@@ -1,7 +1,78 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useRecipesStore } from "@/stores/recipes";
 import type { Recipe, RecipeInput } from "@/types";
+
+// Mock the API service
+vi.mock("@/services/recipeAPI", () => ({
+  recipeAPI: {
+    getAllRecipes: vi.fn(() => Promise.resolve({
+      recipes: [
+        {
+          id: "1",
+          title: "Test Recipe 1",
+          ingredients: ["ingredient1"],
+          instructions: ["step1"],
+          tags: ["quick", "pasta"],
+          time_to_prepare: 30,
+          calories_per_serving: 200,
+          serving_size: 2,
+          favorite: false
+        },
+        {
+          id: "2", 
+          title: "Test Recipe 2",
+          ingredients: ["ingredient2"],
+          instructions: ["step2"],
+          tags: ["slow", "meat"],
+          time_to_prepare: 60,
+          calories_per_serving: 400,
+          serving_size: 4,
+          favorite: true
+        }
+      ]
+    })),
+    createRecipe: vi.fn((recipe) => Promise.resolve({
+      id: "3",
+      ...recipe,
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-01-01T00:00:00Z"
+    })),
+    updateRecipe: vi.fn((id, updates) => Promise.resolve({
+      id,
+      ...updates,
+      updated_at: "2023-01-01T00:00:00Z"
+    })),
+    deleteRecipe: vi.fn(() => Promise.resolve()),
+    toggleFavorite: vi.fn((id) => Promise.resolve({
+      id,
+      favorite: true // Toggle result
+    }))
+  },
+  frontendRecipeToApi: vi.fn((recipe) => ({
+    title: recipe.title,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+    tags: recipe.tags,
+    time_to_prepare: recipe.timeToPrepare,
+    calories_per_serving: recipe.caloriesPerServing,
+    serving_size: recipe.servingSize,
+    favorite: recipe.favorite
+  })),
+  apiRecipeToFrontend: vi.fn((recipe) => ({
+    id: recipe.id,
+    title: recipe.title,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+    tags: recipe.tags,
+    timeToPrepare: recipe.time_to_prepare,
+    caloriesPerServing: recipe.calories_per_serving,
+    servingSize: recipe.serving_size,
+    favorite: recipe.favorite,
+    createdAt: recipe.created_at,
+    updatedAt: recipe.updated_at
+  }))
+}));
 
 describe("Recipes Store", () => {
   beforeEach(() => {
@@ -18,7 +89,9 @@ describe("Recipes Store", () => {
       expect(store.fuzzyThreshold).toBe(100);
       expect(store.recipes).toBeDefined();
       expect(Array.isArray(store.recipes)).toBe(true);
-      expect(store.recipes.length).toBeGreaterThan(0);
+      expect(store.recipes.length).toBe(0); // Starts empty, needs to load from API
+      expect(store.loading).toBe(false);
+      expect(store.error).toBe(null);
     });
   });
 
@@ -55,11 +128,25 @@ describe("Recipes Store", () => {
   describe("Recipe Management", () => {
     let store: ReturnType<typeof useRecipesStore>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       store = useRecipesStore();
+      // Load initial recipes
+      await store.loadRecipes();
     });
 
-    it("should add a new recipe", () => {
+    it("should load recipes from API", async () => {
+      // Create a fresh store instance for this test
+      setActivePinia(createPinia());
+      const store = useRecipesStore();
+      expect(store.recipes.length).toBe(0);
+      
+      await store.loadRecipes();
+      
+      expect(store.recipes.length).toBeGreaterThanOrEqual(2);
+      expect(store.recipes[0].title).toContain("Test Recipe");
+    });
+
+    it("should add a new recipe", async () => {
       const initialCount = store.recipes.length;
       const newRecipe: RecipeInput = {
         title: "Test Recipe",
@@ -71,37 +158,37 @@ describe("Recipes Store", () => {
         servingSize: 2,
       };
 
-      const recipeId = store.addRecipe(newRecipe);
+      const recipeId = await store.addRecipe(newRecipe);
 
       expect(store.recipes.length).toBe(initialCount + 1);
       expect(recipeId).toBeDefined();
       expect(store.recipes[0].title).toBe("Test Recipe");
     });
 
-    it("should delete a recipe", () => {
+    it("should delete a recipe", async () => {
       const initialCount = store.recipes.length;
       const firstRecipeId = store.recipes[0].id;
 
-      store.deleteRecipe(firstRecipeId);
+      await store.deleteRecipe(firstRecipeId);
 
       expect(store.recipes.length).toBe(initialCount - 1);
       expect(store.recipes.find((r) => r.id === firstRecipeId)).toBeUndefined();
     });
 
-    it("should update a recipe", () => {
+    it("should update a recipe", async () => {
       const firstRecipe = store.recipes[0];
 
-      store.updateRecipe(firstRecipe.id, { title: "Updated Title" });
+      await store.updateRecipe(firstRecipe.id, { title: "Updated Title" });
 
       expect(store.recipes[0].title).toBe("Updated Title");
       expect(store.recipes[0].id).toBe(firstRecipe.id);
     });
 
-    it("should toggle favorite status", () => {
+    it("should toggle favorite status", async () => {
       const firstRecipe = store.recipes[0];
       const originalFavorite = firstRecipe.favorite;
 
-      store.toggleFavorite(firstRecipe.id);
+      await store.toggleFavorite(firstRecipe.id);
 
       expect(store.recipes[0].favorite).toBe(!originalFavorite);
     });
@@ -110,8 +197,9 @@ describe("Recipes Store", () => {
   describe("Search Functionality", () => {
     let store: ReturnType<typeof useRecipesStore>;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       store = useRecipesStore();
+      await store.loadRecipes();
     });
 
     it("should return all recipes when no search term", () => {
@@ -121,24 +209,24 @@ describe("Recipes Store", () => {
 
     it("should filter recipes by exact search (AND logic)", () => {
       store.searchLogic = "AND";
-      store.searchTerm = "quick";
+      store.searchTerm = "Test"; // Use "Test" which is in both recipe titles
 
       const filtered = store.filteredRecipes;
       expect(filtered.length).toBeGreaterThan(0);
 
-      // All filtered recipes should contain 'quick' in title or tags
+      // All filtered recipes should contain 'Test' in title or tags
       filtered.forEach((recipe: Recipe) => {
-        const titleMatch = recipe.title.toLowerCase().includes("quick");
-        const tagMatch = recipe.tags.some((tag: string) =>
-          tag.toLowerCase().includes("quick")
-        );
+        const titleMatch = recipe.title.toLowerCase().includes("test");
+        const tagMatch = recipe.tags?.some((tag: string) =>
+          tag.toLowerCase().includes("test")
+        ) || false;
         expect(titleMatch || tagMatch).toBe(true);
       });
     });
 
     it("should filter recipes by exact search (OR logic)", () => {
       store.searchLogic = "OR";
-      store.searchTerm = "quick pasta";
+      store.searchTerm = "quick slow"; // Use tags that exist in our mock data
 
       const filtered = store.filteredRecipes;
       expect(filtered.length).toBeGreaterThan(0);
@@ -147,27 +235,27 @@ describe("Recipes Store", () => {
       filtered.forEach((recipe) => {
         const hasQuick =
           recipe.title.toLowerCase().includes("quick") ||
-          recipe.tags.some((tag) => tag.toLowerCase().includes("quick"));
-        const hasPasta =
-          recipe.title.toLowerCase().includes("pasta") ||
-          recipe.tags.some((tag) => tag.toLowerCase().includes("pasta"));
-        expect(hasQuick || hasPasta).toBe(true);
+          recipe.tags?.some((tag) => tag.toLowerCase().includes("quick")) || false;
+        const hasSlow =
+          recipe.title.toLowerCase().includes("slow") ||
+          recipe.tags?.some((tag) => tag.toLowerCase().includes("slow")) || false;
+        expect(hasQuick || hasSlow).toBe(true);
       });
     });
 
     it("should filter recipes with fuzzy search", () => {
-      store.searchTerm = "pasta"; // Search for a common tag that should exist
+      store.searchTerm = "quick"; // Search for a tag that exists in mock data
 
       const filtered = store.filteredRecipes;
       expect(filtered.length).toBeGreaterThan(0);
 
-      // Should find recipes with "pasta" in tags or title
-      const hasPasta = filtered.some(
+      // Should find recipes with "quick" in tags or title
+      const hasQuick = filtered.some(
         (recipe: Recipe) =>
-          recipe.title.toLowerCase().includes("pasta") ||
-          recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta"))
+          recipe.title.toLowerCase().includes("quick") ||
+          recipe.tags?.some((tag: string) => tag.toLowerCase().includes("quick")) || false
       );
-      expect(hasPasta).toBe(true);
+      expect(hasQuick).toBe(true);
     });
 
     it("should get recipe by id", () => {
@@ -185,42 +273,43 @@ describe("Recipes Store", () => {
     describe("Fuzzy Search Functionality", () => {
       let store: ReturnType<typeof useRecipesStore>;
 
-      beforeEach(() => {
+      beforeEach(async () => {
         store = useRecipesStore();
+        await store.loadRecipes();
       });
 
       it("should find exact matches with high scores", () => {
-        store.searchTerm = "pasta"; // Use a common tag that should exist
+        store.searchTerm = "quick"; // Use a tag that exists in our mock data
 
         const filtered = store.filteredRecipes;
         expect(filtered.length).toBeGreaterThan(0);
 
-        // Should find recipes with "pasta" in title or tags
+        // Should find recipes with "quick" in title or tags
         const hasExactMatch = filtered.some(
           (recipe: Recipe) =>
-            recipe.title.toLowerCase().includes("pasta") ||
-            recipe.tags.some((tag) => tag.toLowerCase().includes("pasta"))
+            recipe.title.toLowerCase().includes("quick") ||
+            recipe.tags?.some((tag) => tag.toLowerCase().includes("quick")) || false
         );
-        // fuzzy search is always enabled
+        expect(hasExactMatch).toBe(true);
       });
 
       it("should find fuzzy matches with typos", () => {
-        store.searchTerm = "past"; // Partial match for "pasta"
+        store.searchTerm = "quic"; // Partial match for "quick"
 
         const filtered = store.filteredRecipes;
         expect(filtered.length).toBeGreaterThan(0);
 
-        // Should still find pasta recipes despite partial match
+        // Should still find quick recipes despite partial match
         const hasFuzzyMatch = filtered.some(
           (recipe: Recipe) =>
-            recipe.title.toLowerCase().includes("pasta") ||
-            recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta"))
+            recipe.title.toLowerCase().includes("quick") ||
+            recipe.tags?.some((tag: string) => tag.toLowerCase().includes("quick")) || false
         );
         expect(hasFuzzyMatch).toBe(true);
       });
 
       it("should respect fuzzy threshold settings", () => {
-        store.searchTerm = "spag"; // Partial match
+        store.searchTerm = "qui"; // Partial match
 
         // Test with low threshold
         store.fuzzyThreshold = 10;
@@ -238,7 +327,7 @@ describe("Recipes Store", () => {
 
       it("should search across title, tags, and ingredients", () => {
         // fuzzy search is always enabled
-        store.searchTerm = "pasta";
+        store.searchTerm = "quick";
 
         const filtered = store.filteredRecipes;
         expect(filtered.length).toBeGreaterThan(0);
@@ -246,18 +335,18 @@ describe("Recipes Store", () => {
         // Should find matches in title, tags, or ingredients
         const hasMatch = filtered.some(
           (recipe: Recipe) =>
-            recipe.title.toLowerCase().includes("pasta") ||
-            recipe.tags.some((tag: string) => tag.toLowerCase().includes("pasta")) ||
-            recipe.ingredients.some((ingredient: string) =>
-              ingredient.toLowerCase().includes("pasta")
-            )
+            recipe.title.toLowerCase().includes("quick") ||
+            recipe.tags?.some((tag: string) => tag.toLowerCase().includes("quick")) ||
+            recipe.ingredients?.some((ingredient: string) =>
+              ingredient.toLowerCase().includes("quick")
+            ) || false
         );
         expect(hasMatch).toBe(true);
       });
     });
 
     it("should handle multi-word queries", () => {
-      store.searchTerm = "quick pasta";
+      store.searchTerm = "Test Recipe"; // Use words that appear in our mock data
 
       const filtered = store.filteredRecipes;
       expect(filtered.length).toBeGreaterThan(0);
@@ -265,15 +354,14 @@ describe("Recipes Store", () => {
       // Should find recipes matching both words
       const hasMultiWordMatch = filtered.some((recipe) => {
         const title = recipe.title.toLowerCase();
-        const tags = recipe.tags.map((t) => t.toLowerCase());
-        const ingredients = recipe.ingredients.map((i) => i.toLowerCase());
+        const tags = recipe.tags?.map((t) => t.toLowerCase()) || [];
 
-        const hasQuick =
-          title.includes("quick") || tags.some((t) => t.includes("quick"));
-        const hasPasta =
-          title.includes("pasta") || tags.some((t) => t.includes("pasta"));
+        const hasTest =
+          title.includes("test") || tags.some((t) => t.includes("test"));
+        const hasRecipe =
+          title.includes("recipe") || tags.some((t) => t.includes("recipe"));
 
-        return hasQuick && hasPasta;
+        return hasTest && hasRecipe;
       });
       expect(hasMultiWordMatch).toBe(true);
     });
